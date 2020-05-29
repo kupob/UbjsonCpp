@@ -127,6 +127,7 @@ namespace ubjson {
             extract_singleValueTo(b, v);
             extract_containerValueTo(b, v);
             good = true;
+            std::cout << "bytes_so_far " << bytes_so_far << std::endl;
         }
         catch(parsing_exception& pexecpt)
         {
