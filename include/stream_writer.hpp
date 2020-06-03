@@ -40,7 +40,8 @@ namespace ubjson {
         std::pair<size_t, bool> append_null();
         std::pair<size_t, bool> append_char(char);
         std::pair<size_t, bool> append_bool(bool);
-        std::pair<size_t, bool> append_float(double);
+        std::pair<size_t, bool> append_float(float);
+        std::pair<size_t, bool> append_double(double);
         std::pair<size_t, bool> append_signedInt(long long);
         std::pair<size_t, bool> append_unsignedInt(unsigned long long);
         std::pair<size_t, bool> append_size(std::size_t);
@@ -106,6 +107,8 @@ namespace ubjson {
             k = append_unsignedInt(v);
         else if(v.isFloat())
             k = append_float(v);
+        else if(v.isDouble())
+            k = append_double(v);
         else if(v.isString())
             k = append_string(v);
         //else if(v.isBinary())
@@ -218,6 +221,9 @@ namespace ubjson {
             write(static_cast<byte>(val));
             rtn = std::make_pair(2, true);
         }
+        else {
+            return append_signedInt(static_cast<long long>(val));
+        }
         return rtn;
     }
 
@@ -269,10 +275,9 @@ namespace ubjson {
     }
 
     template<typename StreamType>
-    std::pair<size_t, bool> StreamWriter<StreamType>::append_float(double val)
+    std::pair<size_t, bool> StreamWriter<StreamType>::append_float(float val)
     {
         using Float32 = std::numeric_limits<float>;
-        using Float64 = std::numeric_limits<double>;
 
         byte b[8];
         std::pair<size_t, bool> rtn(0, false);
@@ -288,7 +293,18 @@ namespace ubjson {
             write(b, 4);
             rtn = std::make_pair(5, true);
         }
-        else if(in_range(val, Float64::lowest(), Float64::max()))
+
+        return rtn;
+    }
+
+    template<typename StreamType>
+    std::pair<size_t, bool> StreamWriter<StreamType>::append_double(double val)
+    {
+        using Float64 = std::numeric_limits<double>;
+
+        byte b[8];
+        std::pair<size_t, bool> rtn(0, false);
+        if(in_range(val, Float64::lowest(), Float64::max()))
         {
             const uint64_t temp = toBigEndianFloat64(val);
             std::memcpy(b, &temp, 8);

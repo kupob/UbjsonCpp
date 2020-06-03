@@ -41,6 +41,7 @@ namespace ubjson {
         SignedInt,
         UnsignedInt,
         Float,
+        Double,
         Map,
         Array,
         Binary,

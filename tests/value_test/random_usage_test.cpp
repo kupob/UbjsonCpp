@@ -33,6 +33,7 @@ void random_use_01()
     cout << "Sizeof(Value::ValueHolder::SignedInt): " << sizeof(Value::ValueHolder::SignedInt) << " bytes\n";
     cout << "Sizeof(Value::ValueHolder::UnsignedInt): " << sizeof(Value::ValueHolder::UnsignedInt) << " bytes\n";
     cout << "Sizeof(Value::ValueHolder::Float): " << sizeof(Value::ValueHolder::Float) << " bytes\n";
+    cout << "Sizeof(Value::ValueHolder::Double): " << sizeof(Value::ValueHolder::Double) << " bytes\n";
     cout << "Sizeof(Value::ValueHolder::String): " << sizeof(Value::ValueHolder::String) << " bytes\n";
     cout << "Sizeof(Value::ValueHolder::Array): " << sizeof(Value::ValueHolder::Array) << " bytes\n";
     cout << "Sizeof(Value::ValueHolder::Binary): " << sizeof(Value::ValueHolder::Binary) << " bytes\n";

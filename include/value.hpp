@@ -104,7 +104,8 @@ namespace ubjson {
             bool Bool;
             long long SignedInt;        //! Prefered for all integer representable within it's range
             unsigned long long UnsignedInt;     //! To be Used when explicitly requested or higher values are to be stored
-            double Float;
+            float Float;
+            double Double;
             std::string String;
             ArrayType Array;
             BinaryType Binary;
@@ -146,10 +147,15 @@ namespace ubjson {
         Value(char);
 
         /*!
-         * \brief contstructs Value containing the given \e double
+         * \brief contstructs Value containing the given \e float
          * \post isFloat() == true \e and type() == Type::Float
-         * \note for \e float type, you may want to convert to double first, because there is no constructor for \e float
-         *
+         * \remarks you can safely call the \e float conversion operator
+         */
+        Value(float);
+
+        /*!
+         * \brief contstructs Value containing the given \e double
+         * \post isDouble() == true \e and type() == Type::Double
          * \remarks you can safely call the \e double conversion operator
          */
         Value(double);
@@ -282,10 +288,13 @@ namespace ubjson {
         //! Returns whether the contained type is a boolean (bool)
         bool isBool() const noexcept;
 
-        //! Returns whether the contained type is a floating point type (double)
+        //! Returns whether the contained type is a floating point type (float)
         bool isFloat() const noexcept;
 
-        //! Returns whether the contained type is a floating point type. (double)
+        //! Returns whether the contained type is a floating point type (double)
+        bool isDouble() const noexcept;
+
+        //! Returns whether the contained type is an array
         bool isArray() const noexcept;
 
         //! The same thing as \ref isMap()
@@ -382,7 +391,8 @@ namespace ubjson {
          * \note this function actually delgates conversion to asInt64(), so refer to it for further behavior
          * \remarks Except when operator ::new fails, this function is guranteed not to throw.
          */
-        double              asFloat()  const noexcept;
+        float               asFloat()  const noexcept;
+        double              asDouble()  const noexcept;
 
         /*!
          * \brief unconditionally converts the contained type to \e std::string using the following rules
@@ -456,6 +466,9 @@ namespace ubjson {
         operator char& () &;
         //! casts to a const reference to the character contained, else throws bad_value_cast
         operator char const& () const&;
+
+        operator float& () &;
+        operator float const& () const&;
 
         operator double& () &;
         operator double const& () const&;

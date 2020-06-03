@@ -98,9 +98,13 @@ Value::Value(unsigned long long ull)
     : vtype(Type::UnsignedInt)
 {  value.UnsignedInt = ull; }
 
-Value::Value(double d)
+Value::Value(float d)
     : vtype(Type::Float)
 {  value.Float = d; }
+
+Value::Value(double d)
+    : vtype(Type::Double)
+{  value.Double = d; }
 
 Value::Value(BinaryType b)
     : vtype(Type::Binary)
@@ -360,13 +364,14 @@ bool Value::isBinary()  const noexcept { return vtype == Type::Binary; }
 bool Value::isBool()    const noexcept { return vtype == Type::Bool;   }
 bool Value::isChar()    const noexcept { return vtype == Type::Char;   }
 bool Value::isFloat()   const noexcept { return vtype == Type::Float;  }
+bool Value::isDouble()  const noexcept { return vtype == Type::Double; }
 bool Value::isMap()     const noexcept { return vtype == Type::Map;    }
 bool Value::isString()  const noexcept { return vtype == Type::String; }
 bool Value::isSignedInteger()   const noexcept { return vtype == Type::SignedInt;   }
 bool Value::isUnsignedInteger() const noexcept { return vtype == Type::UnsignedInt; }
-bool Value::isObject()  const noexcept  { return isMap();                       }
-bool Value::isNumeric()  const noexcept { return isInteger() || isFloat();     }
-bool Value::isInteger() const noexcept  { return isSignedInteger() || isUnsignedInteger(); }
+bool Value::isObject()  const noexcept { return isMap();                                  }
+bool Value::isNumeric() const noexcept { return isInteger() || isFloat() || isDouble();   }
+bool Value::isInteger() const noexcept { return isSignedInteger() || isUnsignedInteger(); }
 
 bool Value::isComparableWith(const Value &rhs) const noexcept
 {
@@ -391,7 +396,8 @@ long long Value::asInt64() const noexcept
         return in_range(value.UnsignedInt, limit::lowest(), limit::max()) ? value.UnsignedInt : 0;
     if(isFloat())
         return in_range(value.Float, limit::lowest(), limit::max()) ? value.Float : 0;
-
+    if(isDouble())
+        return in_range(value.Double, limit::lowest(), limit::max()) ? value.Double : 0;
     if(isChar())
         return static_cast<long long>(value.Char);
     if(isBool())
@@ -417,6 +423,8 @@ unsigned long long Value::asUint64() const noexcept
         return in_range(value.SignedInt, limit::lowest(), limit::max()) ? value.SignedInt : 0;
     if(isFloat())
         return in_range(value.Float, limit::lowest(), limit::max()) ? value.Float : 0;
+    if(isDouble())
+        return in_range(value.Double, limit::lowest(), limit::max()) ? value.Double : 0;
     if(isChar())
         return static_cast<unsigned long long>(value.Char);
     if(isBool())
@@ -432,11 +440,33 @@ unsigned long long Value::asUint64() const noexcept
     return size();
 }
 
-double Value::asFloat() const noexcept
+float Value::asFloat() const noexcept
 {
-
     if(isFloat())
         return value.Float;
+    if (isDouble()) {
+        return value.Double;
+    }
+    if(isString())
+    {
+        try { return std::stof(value.String); }
+        catch (std::invalid_argument&) {}
+        catch (std::out_of_range&) {}
+        return 0;
+    }
+
+    float k1 = asUint();
+    float k2 = asInt();
+
+    return k1 > k2 ? k1 : k2;
+}
+
+double Value::asDouble()  const noexcept
+{
+    if (isFloat())
+        return value.Float;
+    if(isDouble())
+        return value.Double;
     if(isString())
     {
         try { return std::stod(value.String); }
@@ -460,7 +490,9 @@ bool Value::asBool() const noexcept
     if(isSignedInteger())
         return value.SignedInt != 0;
     if(isFloat())
-        return value.Float != 0;
+        return value.Float != 0.f;
+    if(isDouble())
+        return value.Double != 0.0;
     if(isChar())
         return value.Char != '\0';
     return size() != 0;
@@ -494,6 +526,8 @@ std::string Value::asString() const noexcept
         return std::to_string(value.UnsignedInt);
     if(isFloat())
         return std::to_string(value.Float);
+    if(isDouble())
+        return std::to_string(value.Double);
     return "";
 }
 
@@ -519,6 +553,8 @@ Value::BinaryType Value::asBinary() const noexcept
         return as_binary(&value.UnsignedInt, sizeof(value.UnsignedInt));
     case Type::Float:
         return as_binary(&value.Float, sizeof(value.Float));
+    case Type::Double:
+        return as_binary(&value.Double, sizeof(value.Double));
     case Type::String:
         //return as_binary(reinterpret_cast<byte*>(value.String), sizeof(value.Char));
     case Type::Array:
@@ -580,6 +616,9 @@ void Value::move_from(Value&& v)
     case Type::Float:
         value.Float = v.value.Float;
         break;
+    case Type::Double:
+        value.Double = v.value.Double;
+        break;
     case Type::String:
         construct_fromString( std::move(v.value.String) );
         break;
@@ -619,6 +658,9 @@ void Value::copy_from(const Value& v)
         break;
     case Type::Float:
         value.Float = v.value.Float;
+        break;
+    case Type::Double:
+        value.Double = v.value.Double;
         break;
     case Type::String:
         construct_fromString( std::string( v.value.String ));
@@ -744,18 +786,33 @@ Value::operator char const& () const&
 }
 
 
-///// double
-Value::operator double & () &
+///// float
+Value::operator float& () &
 {
     if(vtype == Type::Float)
         return value.Float;
+    throw bad_value_cast("'Value&' cannot be casted to 'float'");
+}
+
+Value::operator float const& () const&
+{
+    if(vtype == Type::Float)
+        return value.Float;
+    throw bad_value_cast("'Value&' cannot be casted to 'float'");
+}
+
+///// double
+Value::operator double & () &
+{
+    if(vtype == Type::Double)
+        return value.Double;
     throw bad_value_cast("'Value&' cannot be casted to 'double'");
 }
 
 Value::operator double const& () const&
 {
-    if(vtype == Type::Float)
-        return value.Float;
+    if(vtype == Type::Double)
+        return value.Double;
     throw bad_value_cast("'Value&' cannot be casted to 'double'");
 }
 
@@ -823,7 +880,7 @@ bool ubjson::operator == (const Value& lhs, const Value& rhs)
     using limit = std::numeric_limits<double>;
 
     if(lhs.isNumeric() && rhs.isNumeric())
-        return std::abs(lhs.asFloat() - rhs.asFloat()) <= limit::epsilon();
+        return std::abs(lhs.asDouble() - rhs.asDouble()) <= limit::epsilon();
 
     if(lhs.type() != rhs.type())
         return false;
@@ -922,6 +979,8 @@ void to_ostream::print_value(std::ostream &os, const Value &v)
     else if(v.isUnsignedInteger())
         os << static_cast<unsigned long long>(v);
     else if(v.isFloat())
+        os << static_cast<float>(v);
+    else if(v.isDouble())
         os << static_cast<double>(v);
     else if(v.isString())
         os << "\"" << static_cast<std::string>(v) << "\"";

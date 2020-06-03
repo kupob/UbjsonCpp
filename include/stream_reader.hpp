@@ -323,7 +323,7 @@ namespace ubjson {
         else if(isFloat32(marker))
         {
             float extracted(extract_Float32().first);
-            double val(extracted);
+            float val(extracted);
             value = val;
         }
         else if(isFloat64(marker))
